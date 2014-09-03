@@ -30,13 +30,14 @@ nestedSubclades = function(tree,t1,t2) {
 }
 
 testNest = function(dna,t1,t2,slide=dim(test)[2]) {
-	dnaLength = dim(test)[2]
+	dnaLength = dim(dna)[2]
+	print(dnaLength)
 	i = 0 
 	nested = c()
-	while (i*slide <= dnaLength) {
-		print(i*slide)
+	while (i*slide < dnaLength) {
 		start = (i*slide+1)
 		end = min((i+1)*slide,dnaLength)
+		print(c(start,end))
 		curDNA = dna[,start:end]
 		curDist = dist.dna(curDNA)
 		curUPGMA = upgma(curDist)
@@ -44,4 +45,39 @@ testNest = function(dna,t1,t2,slide=dim(test)[2]) {
 		i = i + 1
 	}
 	return(nested)
+}
+
+testNestBulk = function(files,inds1,inds2,slide=1000) {
+	res = list()
+	for (i in 1:length(files)) {
+		curDNA = read.dna(files[i],format="fasta")
+		t1inds = sapply(inds1,grep,labels(curDNA))
+		dim(t1inds) = NULL
+		t1 = labels(curDNA)[t1inds]
+		t2inds = sapply(inds2,grep,labels(curDNA))
+		dim(t2inds) = NULL
+		t2 = labels(curDNA)[t2inds]
+		res[[i]] = testNest(curDNA,t1,t2,slide=slide)
+	}
+	return(res)
+}
+
+getUPGMAtree = function(file) {
+	dna = read.dna(file,format="fasta")
+	dist = dist.dna(dna)
+	upgma(dist)
+}
+
+plotUPGMAcolored = function(file,inds,colors,show.tip.label=TRUE) {
+	#inds is a LIST of different groups of individuals
+	#colors is a VECTOR of colors, same length as inds
+	tree = getUPGMAtree(file)
+	col = rep("black",length(tree$edge.length))
+	for (i in 1:length(inds)) {
+		curIndices = sapply(inds[[i]],grep,tree$tip.label)
+		curEdges = match(curIndices,tree$edge[,2])
+		col[curEdges]=colors[i]
+	}
+	plot(tree,cex=.5,adj=.5,edge.color=col,edge.width=2,show.tip.label=show.tip.label)
+	invisible(tree)
 }
