@@ -68,16 +68,26 @@ getUPGMAtree = function(file) {
 	upgma(dist)
 }
 
-plotUPGMAcolored = function(file,inds,colors,show.tip.label=TRUE) {
+plotUPGMAcolored = function(file,inds,colors,show.tip.label=TRUE,exclude=NULL) {
 	#inds is a LIST of different groups of individuals
 	#colors is a VECTOR of colors, same length as inds
 	tree = getUPGMAtree(file)
+	#print("inferred UPGMA tree")
+	if (!is.null(exclude)) {
+		toExclude = sapply(exclude,grep,tree$tip.label)
+		toExclude = unlist(toExclude)
+		dim(toExclude) = NULL
+		tree = drop.tip(tree,tree$tip.label[toExclude])
+	}
 	col = rep("black",length(tree$edge.length))
 	for (i in 1:length(inds)) {
 		curIndices = sapply(inds[[i]],grep,tree$tip.label)
+		curIndices = unlist(curIndices)
+		dim(curIndices)=NULL
 		curEdges = match(curIndices,tree$edge[,2])
 		col[curEdges]=colors[i]
 	}
+	#print("prepared colors")
 	plot(tree,cex=.5,adj=.5,edge.color=col,edge.width=2,show.tip.label=show.tip.label)
-	invisible(tree)
+	invisible(list(tree=tree,col=col))
 }
